@@ -13,3 +13,8 @@ kb_files = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Create', callback_data='create'), InlineKeyboardButton(text='Delete', callback_data='delete')]
 ], resize_keyboard=True)
 
+kb_security = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Block screen', callback_data='block')],
+    [InlineKeyboardButton(text='Take a picture', callback_data='pictuer')],
+    [InlineKeyboardButton(text='Shutdown PC', callback_data='shutdown')]
+], resize_keyboard=True)
