@@ -32,6 +32,7 @@ async def work_with_files(message: Message):
     await message.answer(f'Current working directory is:\n"{os.getcwd()}"')
     await message.answer('Now you can work with files', reply_markup=kb.kb_files)
 
+
 @router.callback_query(F.data == 'chdir')
 async def chdir_one(callback: CallbackQuery, state: FSMContext):
     await state.set_state(files.chdir)
@@ -49,6 +50,11 @@ async def chdir_two(message: Message, state: FSMContext):
         await message.answer('This path does not exist', reply_markup=kb.kb_files)
     
     await state.clear()
+
+
+@router.callback_query(F.data == 'filesList')
+async def filesList(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text(f'List of files in a directory:\n{str(os.listdir(os.getcwd()))}')
 
 
 @router.callback_query(F.data == 'create')
@@ -75,7 +81,7 @@ async def create_directory(message: Message, state: FSMContext):
 
 
 @router.callback_query(F.data == 'textFile')
-async def create_question_textFile(callback: CallbackQuery, state: FSMContext):
+async def create_question_fileName(callback: CallbackQuery, state: FSMContext):
     await state.set_state(files.fileName)
     await callback.message.edit_text('Write the desired name for the new text file')
 
