@@ -7,11 +7,17 @@ main = ReplyKeyboardMarkup(keyboard=[
     [KeyboardButton(text='Security', callback_data='security')]
 ], resize_keyboard=True)
 
+
 kb_files = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Change directory', callback_data='chdir')],
     [InlineKeyboardButton(text='List of files', callback_data='filesList')],
     [InlineKeyboardButton(text='Create', callback_data='create'), InlineKeyboardButton(text='Delete', callback_data='delete')]
 ], resize_keyboard=True)
+
+kb_create = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text='Directory', callback_data='directory'), InlineKeyboardButton(text='File', callback_data='txtFile')]
+])
+
 
 kb_security = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text='Block screen', callback_data='block')],
