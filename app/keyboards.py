@@ -15,7 +15,7 @@ kb_files = InlineKeyboardMarkup(inline_keyboard=[
 ], resize_keyboard=True)
 
 kb_create = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text='Directory', callback_data='directory'), InlineKeyboardButton(text='File', callback_data='txtFile')]
+    [InlineKeyboardButton(text='Directory', callback_data='directory'), InlineKeyboardButton(text='File', callback_data='textFile')]
 ])
 
 

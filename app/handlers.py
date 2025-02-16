@@ -16,7 +16,8 @@ router = Router()
 class files(StatesGroup):
     chdir = State()
     directory = State()
-    textFile = State()
+    fileName = State()
+    fileContent = State()
 
 
 @router.message(CommandStart())
@@ -69,6 +70,32 @@ async def create_directory(message: Message, state: FSMContext):
         await message.answer(f'Directory {data["directory"]} created', reply_markup=kb.kb_files)
     else:
         await message.answer('A directory with this name already exists', reply_markup=kb.kb_files)
+    
+    await state.clear()
+
+
+@router.callback_query(F.data == 'textFile')
+async def create_question_textFile(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(files.fileName)
+    await callback.message.edit_text('Write the desired name for the new text file')
+
+@router.message(files.fileName)
+async def create_queston_fileContent(message: Message, state: FSMContext):
+    await state.update_data(fileName = message.text)
+    await state.set_state(files.fileContent)
+    await message.answer('Write the desired content for the new text file')
+
+@router.message(files.fileContent)
+async def create_textFile(message: Message, state: FSMContext):
+    await state.update_data(fileContent = message.text)
+    data = await state.get_data()
+
+    if not os.path.exists(data["fileName"]):
+        with open(str(data["fileName"]), "w") as file:
+            file.write(str(data['fileContent']))
+        await message.answer(f'Text file {data["fileName"]} created', reply_markup=kb.kb_files)
+    else:
+        await message.answer('A text file with this name already exists', reply_markup=kb.kb_files)
     
     await state.clear()
 
