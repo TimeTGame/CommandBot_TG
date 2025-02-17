@@ -1,4 +1,5 @@
-import os
+from send2trash import send2trash
+
 from aiogram import F, Router
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery
@@ -6,6 +7,7 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 
 import app.keyboards as kb
+import os
 # from app.middlewares import TestMiddleware
 
 router = Router()
@@ -18,6 +20,7 @@ class files(StatesGroup):
     directory = State()
     fileName = State()
     fileContent = State()
+    delete = State()
 
 
 @router.message(CommandStart())
@@ -45,20 +48,23 @@ async def chdir_two(message: Message, state: FSMContext):
 
     if os.path.exists(data["chdir"]):
         os.chdir(data["chdir"])
-        await message.answer(f'Path successfully changed on:\n"{os.getcwd()}"', reply_markup=kb.kb_files)
+        await message.answer(f'Path successfully changed on:\n"{os.getcwd()}"')
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
     else:
-        await message.answer('This path does not exist', reply_markup=kb.kb_files)
+        await message.answer('This path does not exist')
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
     
     await state.clear()
 
 
 @router.callback_query(F.data == 'filesList')
-async def filesList(callback: CallbackQuery, state: FSMContext):
+async def filesList(callback: CallbackQuery):
     await callback.message.edit_text(f'List of files in a directory:\n{str(os.listdir(os.getcwd()))}')
+    await callback.message.answer('Now you can work with files', reply_markup=kb.kb_files)
 
 
 @router.callback_query(F.data == 'create')
-async def create_choice(callback: CallbackQuery, state: FSMContext):
+async def create_choice(callback: CallbackQuery):
     await callback.message.edit_text('Create directory or text file', reply_markup=kb.kb_create)
 
 @router.callback_query(F.data == 'directory')
@@ -73,9 +79,11 @@ async def create_directory(message: Message, state: FSMContext):
 
     if not os.path.exists(data["directory"]):
         os.makedirs(data["directory"])
-        await message.answer(f'Directory {data["directory"]} created', reply_markup=kb.kb_files)
+        await message.answer(f'Directory {data["directory"]} created')
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
     else:
-        await message.answer('A directory with this name already exists', reply_markup=kb.kb_files)
+        await message.answer('A directory with this name already exists')
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
     
     await state.clear()
 
@@ -99,11 +107,32 @@ async def create_textFile(message: Message, state: FSMContext):
     if not os.path.exists(data["fileName"]):
         with open(str(data["fileName"]), "w") as file:
             file.write(str(data['fileContent']))
-        await message.answer(f'Text file {data["fileName"]} created', reply_markup=kb.kb_files)
+        await message.answer(f'Text file {data["fileName"]} created')
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
     else:
-        await message.answer('A text file with this name already exists', reply_markup=kb.kb_files)
+        await message.answer('A text file with this name already exists')
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
     
     await state.clear()
+
+
+@router.callback_query(F.data =='delete')
+async def delete_question(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(files.delete)
+    await callback.message.edit_text('Write the path to the directory or file you want to delete')
+
+@router.message(files.delete)
+async def delete_this(message: Message, state: FSMContext):
+    await state.update_data(delete = message.text)
+    data = await state.get_data()
+
+    if os.path.exists(str(data['delete'])):
+        send2trash(str(data["delete"]))
+        await message.answer(f'"{str(data["delete"])}"\nhas been deleted')
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
+    else:
+        await message.answer(f'"{str(data["delete"])}"\ndoes not exist')
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
 
 
 
