@@ -22,6 +22,9 @@ class files(StatesGroup):
     fileContent = State()
     delete = State()
 
+class sec(StatesGroup):
+    shutdown = State()
+
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
@@ -136,6 +139,13 @@ async def delete_this(message: Message, state: FSMContext):
 
 
 
-@router.message(F.text == 'Security')
+@router.message(F.text == 'Security' or F.text == 'shutdown_No')
 async def security(message: Message):
     await message.answer('Now you can play with you computer', reply_markup=kb.kb_security)
+
+@router.callback_query(F.data == 'lock')
+async def lock_screen(callback: CallbackQuery):
+    await callback.message.edit_text('Your PC is now locked')
+    await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security)
+
+    os.system("rundll32.exe user32.dll, LockWorkStation")
