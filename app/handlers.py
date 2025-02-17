@@ -2,12 +2,15 @@ from send2trash import send2trash
 
 from aiogram import F, Router
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, FSInputFile, input_media
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
+from aiogram.types import InputMediaPhoto
+
 
 import app.keyboards as kb
 import os
+from cv2 import VideoCapture, imwrite
 # from app.middlewares import TestMiddleware
 
 router = Router()
@@ -149,3 +152,19 @@ async def lock_screen(callback: CallbackQuery):
     await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security)
 
     os.system("rundll32.exe user32.dll, LockWorkStation")
+
+@router.callback_query(F.data == 'picture')
+async def picture(callback: CallbackQuery):
+    result, image = VideoCapture(0).read()
+    if result:
+        if not os.path.exists('pic'):
+            os.makedirs('pic')
+
+        imwrite("pic/CameraImage.jpg", image)
+        photo = FSInputFile("pic/CameraImage.jpg")
+        
+        await callback.message.edit_media(InputMediaPhoto(media=photo, caption="hi again"))
+        await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security)
+    else:
+        await callback.message.answer('At the moment it is not possible to take photos from the camera')
+        await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security)
