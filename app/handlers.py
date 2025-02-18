@@ -2,7 +2,7 @@ from send2trash import send2trash
 
 from aiogram import F, Router
 from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, CallbackQuery, FSInputFile, input_media
+from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InputMediaPhoto
@@ -139,12 +139,18 @@ async def delete_this(message: Message, state: FSMContext):
     else:
         await message.answer(f'"{str(data["delete"])}"\ndoes not exist')
         await message.answer('Now you can work with files', reply_markup=kb.kb_files)
+    
+    state.clear
 
 
 
-@router.message(F.text == 'Security' or F.text == 'shutdown_No')
-async def security(message: Message):
+@router.message(F.text == 'Security' or F.data == 'shutdown_No')
+async def securityMessage(message: Message):
     await message.answer('Now you can play with you computer', reply_markup=kb.kb_security)
+
+@router.callback_query(F.data == 'shutdown_No')
+async def securityCallback(callback: CallbackQuery):
+    await callback.message.edit_text('Now you can play with you computer', reply_markup=kb.kb_security)
 
 @router.callback_query(F.data == 'lock')
 async def lock_screen(callback: CallbackQuery):
@@ -162,9 +168,20 @@ async def picture(callback: CallbackQuery):
 
         imwrite("pic/CameraImage.jpg", image)
         photo = FSInputFile("pic/CameraImage.jpg")
-        
+
         await callback.message.edit_media(InputMediaPhoto(media=photo, caption="hi again"))
         await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security)
     else:
         await callback.message.answer('At the moment it is not possible to take photos from the camera')
         await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security)
+
+@router.callback_query(F.data == 'shutdown')
+async def shutdown_question(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text('Are you sure you want to turn it off?', reply_markup=kb.kb_shutdown)
+
+@router.callback_query(F.data == 'shutdown_Yes')
+async def shutdown(callback: CallbackQuery):
+    await callback.message.answer('Your PC will be turned off')
+    await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security)
+
+    os.system("shutdown /s /t 1")
