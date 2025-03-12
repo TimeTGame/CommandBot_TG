@@ -11,11 +11,12 @@ from aiogram.types import InputMediaPhoto
 import app.keyboards as kb
 import os
 from cv2 import VideoCapture, imwrite
-# from app.middlewares import TestMiddleware
+from config import ADMINS
+#from app.middlewares import TestMiddleware
 
 router = Router()
 
-# router.message.middleware(TestMiddleware())
+#router.message.middleware(TestMiddleware())
 
 
 class files(StatesGroup):
@@ -31,15 +32,28 @@ class sec(StatesGroup):
 
 @router.message(CommandStart())
 async def cmd_start(message: Message):
-    await message.reply(f'Hello!\nYour ID: {message.from_user.id}\nName: {message.from_user.full_name}',
-                        reply_markup=kb.main)
+    if str(message.from_user.id) in ADMINS:
+        await message.reply(f'Hello {message.from_user.full_name}, you can use the control panel.',
+                            reply_markup=kb.kb_main(message.from_user.id))
+    else:
+        await message.answer('You are not on the list of administrators')
+
+
+
+@router.message(F.text == '📖 Github')
+async def github(message: Message):
+    if str(message.from_user.id) in ADMINS:
+        await message.answer('Creator: https://github.com/TimeTGame')
 
 
     
-@router.message(F.text == 'Work with files')
+@router.message(F.text == '📂 Work with files')
 async def work_with_files(message: Message):
-    await message.answer(f'Current working directory is:\n"{os.getcwd()}"')
-    await message.answer('Now you can work with files', reply_markup=kb.kb_files)
+    if str(message.from_user.id) in ADMINS:
+        await message.answer(f'Current working directory is:\n"{os.getcwd()}"')
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
+    else:
+        await message.answer('You are not on the list of administrators')
 
 
 @router.callback_query(F.data == 'chdir')
@@ -55,10 +69,10 @@ async def chdir_two(message: Message, state: FSMContext):
     if os.path.exists(data["chdir"]):
         os.chdir(data["chdir"])
         await message.answer(f'Path successfully changed on:\n"{os.getcwd()}"')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
     else:
         await message.answer('This path does not exist')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
     
     await state.clear()
 
@@ -66,12 +80,12 @@ async def chdir_two(message: Message, state: FSMContext):
 @router.callback_query(F.data == 'filesList')
 async def filesList(callback: CallbackQuery):
     await callback.message.edit_text(f'List of files in a directory:\n{str(os.listdir(os.getcwd()))}')
-    await callback.message.answer('Now you can work with files', reply_markup=kb.kb_files)
+    await callback.message.answer('Now you can work with files', reply_markup=kb.kb_files(callback.from_user.id))
 
 
 @router.callback_query(F.data == 'create')
 async def create_choice(callback: CallbackQuery):
-    await callback.message.edit_text('Create directory or text file', reply_markup=kb.kb_create)
+    await callback.message.edit_text('Create directory or text file', reply_markup=kb.kb_create(callback.from_user.id))
 
 @router.callback_query(F.data == 'directory')
 async def create_question_dir(callback: CallbackQuery, state: FSMContext):
@@ -86,10 +100,10 @@ async def create_directory(message: Message, state: FSMContext):
     if not os.path.exists(data["directory"]):
         os.makedirs(data["directory"])
         await message.answer(f'Directory {data["directory"]} created')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
     else:
         await message.answer('A directory with this name already exists')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
     
     await state.clear()
 
@@ -114,10 +128,10 @@ async def create_textFile(message: Message, state: FSMContext):
         with open(str(data["fileName"]), "w") as file:
             file.write(str(data['fileContent']))
         await message.answer(f'Text file {data["fileName"]} created')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
     else:
         await message.answer('A text file with this name already exists')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
     
     await state.clear()
 
@@ -135,27 +149,32 @@ async def delete_this(message: Message, state: FSMContext):
     if os.path.exists(str(data['delete'])):
         send2trash(str(data["delete"]))
         await message.answer(f'"{str(data["delete"])}"\nhas been deleted')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
+        print('LolYES')
     else:
         await message.answer(f'"{str(data["delete"])}"\ndoes not exist')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files)
+        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
+        print('LolNO')
     
-    state.clear
+    await state.clear()
 
 
 
-@router.message(F.text == 'Security' or F.data == 'shutdown_No')
+@router.message(F.text == '🔐 Security')
 async def securityMessage(message: Message):
-    await message.answer('Now you can play with you computer', reply_markup=kb.kb_security)
+    if str(message.from_user.id) in ADMINS:
+        await message.answer('Now you can play with you computer', reply_markup=kb.kb_security(message.from_user.id))
+    else:
+        await message.answer('You are not on the list of administrators')
 
 @router.callback_query(F.data == 'shutdown_No')
 async def securityCallback(callback: CallbackQuery):
-    await callback.message.edit_text('Now you can play with you computer', reply_markup=kb.kb_security)
+    await callback.message.edit_text('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
 
 @router.callback_query(F.data == 'lock')
 async def lock_screen(callback: CallbackQuery):
     await callback.message.edit_text('Your PC is now locked')
-    await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security)
+    await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
 
     os.system("rundll32.exe user32.dll, LockWorkStation")
 
@@ -170,18 +189,18 @@ async def picture(callback: CallbackQuery):
         photo = FSInputFile("pic/CameraImage.jpg")
 
         await callback.message.edit_media(InputMediaPhoto(media=photo, caption="hi again"))
-        await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security)
+        await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
     else:
         await callback.message.answer('At the moment it is not possible to take photos from the camera')
-        await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security)
+        await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
 
 @router.callback_query(F.data == 'shutdown')
 async def shutdown_question(callback: CallbackQuery, state: FSMContext):
-    await callback.message.edit_text('Are you sure you want to turn it off?', reply_markup=kb.kb_shutdown)
+    await callback.message.edit_text('Are you sure you want to turn it off?', reply_markup=kb.kb_shutdown(callback.from_user.id))
 
 @router.callback_query(F.data == 'shutdown_Yes')
 async def shutdown(callback: CallbackQuery):
     await callback.message.answer('Your PC will be turned off')
-    await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security)
+    await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
 
     os.system("shutdown /s /t 1")
