@@ -15,6 +15,7 @@ from config import ADMINS
 #from app.middlewares import TestMiddleware
 
 router = Router()
+main_path = os.getcwd()
 
 #router.message.middleware(TestMiddleware())
 
@@ -182,11 +183,11 @@ async def lock_screen(callback: CallbackQuery):
 async def picture(callback: CallbackQuery):
     result, image = VideoCapture(0).read()
     if result:
-        if not os.path.exists('pic'):
-            os.makedirs('pic')
+        if not os.path.exists(f'{main_path}/pic'):
+            os.makedirs(f'{main_path}/pic')
 
-        imwrite("pic/CameraImage.jpg", image)
-        photo = FSInputFile("pic/CameraImage.jpg")
+        imwrite(f'{main_path}/pic/CameraImage.jpg', image)
+        photo = FSInputFile(f'{main_path}/pic/CameraImage.jpg')
 
         await callback.message.edit_media(InputMediaPhoto(media=photo, caption="hi again"))
         await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
