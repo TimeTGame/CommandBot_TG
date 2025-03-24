@@ -1,4 +1,6 @@
 from send2trash import send2trash
+from cv2 import VideoCapture, imwrite
+from config import ADMINS
 
 from aiogram import F, Router
 from aiogram.filters import CommandStart, Command
@@ -7,17 +9,11 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InputMediaPhoto
 
-
 import app.keyboards as kb
 import os
-from cv2 import VideoCapture, imwrite
-from config import ADMINS
-#from app.middlewares import TestMiddleware
 
 router = Router()
 main_path = os.getcwd()
-
-#router.message.middleware(TestMiddleware())
 
 
 class files(StatesGroup):

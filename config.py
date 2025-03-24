@@ -1,0 +1,2 @@
+TOKEN = 'BotToken'
+ADMINS = ['YourTelegramID']
