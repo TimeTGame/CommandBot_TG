@@ -11,6 +11,7 @@ def kb_main(user_telegram_id: int):
         main_list.append([KeyboardButton(text='📖 Github')])
         main_list.append([KeyboardButton(text='📂 Work with files')])
         main_list.append([KeyboardButton(text='🔐 Security')])
+        main_list.append([KeyboardButton(text='⚙ Settings')])
 
     keyboard = ReplyKeyboardMarkup(keyboard=main_list, resize_keyboard=True)
     return keyboard
@@ -59,4 +60,15 @@ def kb_shutdown(user_telegram_id: int):
                               InlineKeyboardButton(text='No', callback_data='shutdown_No')])
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=shutdown_list)
+    return keyboard
+
+
+
+def kb_settings(user_telegram_id: int):
+    settings_list = []
+
+    if str(user_telegram_id) in ADMINS:
+        settings_list.append([InlineKeyboardButton(text='Update admins', callback_data='update_admins')])
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=settings_list)
     return keyboard

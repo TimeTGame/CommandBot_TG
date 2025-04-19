@@ -1,6 +1,6 @@
 from send2trash import send2trash
 from cv2 import VideoCapture, imwrite
-from config import ADMINS
+from config import *
 
 from aiogram import F, Router
 from aiogram.filters import CommandStart, Command
@@ -11,6 +11,8 @@ from aiogram.types import InputMediaPhoto
 
 import app.keyboards as kb
 import os
+
+print('- Your bot has been started.')
 
 router = Router()
 main_path = os.getcwd()
@@ -25,6 +27,9 @@ class files(StatesGroup):
 
 class sec(StatesGroup):
     shutdown = State()
+
+class settings(StatesGroup):
+    admins = State()
 
 
 @router.message(CommandStart())
@@ -164,9 +169,6 @@ async def securityMessage(message: Message):
     else:
         await message.answer('You are not on the list of administrators')
 
-@router.callback_query(F.data == 'shutdown_No')
-async def securityCallback(callback: CallbackQuery):
-    await callback.message.edit_text('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
 
 @router.callback_query(F.data == 'lock')
 async def lock_screen(callback: CallbackQuery):
@@ -174,6 +176,7 @@ async def lock_screen(callback: CallbackQuery):
     await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
 
     os.system("rundll32.exe user32.dll, LockWorkStation")
+
 
 @router.callback_query(F.data == 'picture')
 async def picture(callback: CallbackQuery):
@@ -191,9 +194,14 @@ async def picture(callback: CallbackQuery):
         await callback.message.answer('At the moment it is not possible to take photos from the camera')
         await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
 
+
 @router.callback_query(F.data == 'shutdown')
-async def shutdown_question(callback: CallbackQuery, state: FSMContext):
+async def shutdown_question(callback: CallbackQuery):
     await callback.message.edit_text('Are you sure you want to turn it off?', reply_markup=kb.kb_shutdown(callback.from_user.id))
+
+@router.callback_query(F.data == 'shutdown_No')
+async def securityCallback(callback: CallbackQuery):
+    await callback.message.edit_text('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
 
 @router.callback_query(F.data == 'shutdown_Yes')
 async def shutdown(callback: CallbackQuery):
@@ -201,3 +209,39 @@ async def shutdown(callback: CallbackQuery):
     await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
 
     os.system("shutdown /s /t 1")
+
+
+
+@router.message(F.text == '⚙ Settings')
+async def github(message: Message):
+    if str(message.from_user.id) in ADMINS:
+        await message.answer('Settings', reply_markup=kb.kb_settings(message.from_user.id))
+    else:
+        await message.answer('You are not on the list of administrators')
+
+
+@router.callback_query(F.data == 'update_admins')
+async def update_admins(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(settings.admins)
+
+    await callback.message.edit_text(f'current list of admins:\n{ADMINS}')
+    await callback.message.answer('Enter the user ID of the user you want to make an admin or remove from the admin list.')
+
+@router.message(settings.admins)
+async def add_admin_func(message: Message, state: FSMContext):
+    await state.update_data(admins = message.text)
+    data = await state.get_data()
+
+    if str(data["admins"]) in ADMINS:
+        ADMINS.remove(str(data["admins"]))
+        await message.answer(f'{data["admins"]} has been deleted form admin list.')
+    else:
+        ADMINS.append(str(data["admins"]))
+        await message.answer(f'{data["admins"]} has been added in admin list.')
+    
+    with open(f'{main_path}/config.py', 'w') as file:
+        file.writelines([f'TOKEN = \'{TOKEN}\'\n', f'ADMINS = {ADMINS}'])
+    
+    await message.answer(f'current list of admins:\n{ADMINS}', reply_markup=kb.kb_settings(message.from_user.id))
+    
+    await state.clear()

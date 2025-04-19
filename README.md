@@ -6,6 +6,22 @@
 
 Этот бот предназначен для удаленного управления устройствами через мессенджер Telegram. С помощью бота вы сможете выполнять различные команды на своем устройстве прямо из приложения Telegram.
 
+## Функции
+
+### Work with files
+- Change directory
+- List of files
+-Create file/directory
+-Delete file/directory
+
+### Security
+- Take a picture
+- Lock screen
+- Shutdown PC
+
+### Settings
+- Update admins
+
 ## Установка
 
 Для установки и запуска бота выполните следующие шаги:
