@@ -1,16 +1,19 @@
 from send2trash import send2trash
 from cv2 import VideoCapture, imwrite
+import pyautogui
 from config import *
+from time import sleep
 
 from aiogram import F, Router
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
-from aiogram.types import InputMediaPhoto
+from aiogram.types import InputMediaPhoto, BotCommand, BotCommandScopeDefault
 
 import app.keyboards as kb
 import os
+import asyncio
 
 print('- Your bot has been started.')
 
@@ -27,18 +30,55 @@ class files(StatesGroup):
 
 class sec(StatesGroup):
     shutdown = State()
+    period = State()
+    answer_wait = State()
 
 class settings(StatesGroup):
     admins = State()
 
 
+async def do_screenshots(chat_id, period, bot):
+    global period_screenshot
+
+    while period_screenshot > 0:
+        myScreenshot = pyautogui.screenshot()
+
+        if not os.path.exists(f'{main_path}/pic'):
+            os.makedirs(f'{main_path}/pic')
+
+        screenshot_path = f'{main_path}/pic/Screenshot.jpg'
+        myScreenshot.save(screenshot_path)
+
+        myScreenshot_file = FSInputFile(screenshot_path)
+
+        await bot.send_photo(chat_id, myScreenshot_file)
+
+        await asyncio.sleep(period)
+
+
+
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     if str(message.from_user.id) in ADMINS:
+        await message.bot.set_my_commands([BotCommand(command='start', description='Start'),
+                               BotCommand(command='stop_period_screenshot', description='Stop period screenshot')],
+                               BotCommandScopeDefault())
+                
         await message.reply(f'Hello {message.from_user.full_name}, you can use the control panel.',
                             reply_markup=kb.kb_main(message.from_user.id))
     else:
         await message.answer('You are not on the list of administrators')
+
+
+@router.message(Command('stop_period_screenshot')) # Command to stop periodic screenshot
+async def stop_sacreenshots(message: Message, state: FSMContext):
+    if str(message.from_user.id) in ADMINS:
+        global period_screenshot
+        period_screenshot = 0
+
+        await message.answer('The periodic screenshot function has been stopped.')
+        await state.clear()
+        await message.answer('Now you can play with you computer', reply_markup=kb.kb_security(message.from_user.id))
 
 
 
@@ -188,11 +228,49 @@ async def picture(callback: CallbackQuery):
         imwrite(f'{main_path}/pic/CameraImage.jpg', image)
         photo = FSInputFile(f'{main_path}/pic/CameraImage.jpg')
 
-        await callback.message.edit_media(InputMediaPhoto(media=photo, caption="hi again"))
+        await callback.message.edit_media(InputMediaPhoto(media=photo, caption="Hi again"))
         await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
     else:
         await callback.message.answer('At the moment it is not possible to take photos from the camera')
         await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
+
+
+@router.callback_query(F.data == 'screenshot')
+async def screenshot_question(callback: CallbackQuery):
+    await callback.message.edit_text('What screenshot do you want to take?', reply_markup=kb.kb_screenshot(callback.from_user.id))
+
+@router.callback_query(F.data == 'oneTimeScreen')
+async def oneTimeScreen(callback: CallbackQuery):
+    myScreenshot = pyautogui.screenshot()
+
+    if not os.path.exists(f'{main_path}/pic'):
+        os.makedirs(f'{main_path}/pic')
+
+    myScreenshot.save(f'{main_path}/pic/Screenshot.jpg')
+    myScreenshot = FSInputFile(f'{main_path}/pic/Screenshot.jpg')
+
+    await callback.message.edit_media(InputMediaPhoto(media=myScreenshot, caption="Screenshot"))
+    await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
+
+@router.callback_query(F.data == 'screenshot_period')
+async def screenshot_period(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text('Write the period between screenshots (in seconds)')
+    await state.set_state(sec.period)
+
+@router.message(sec.period)
+async def screenshot_period_set(message: Message, state: FSMContext):
+    await state.update_data(period = message.text)
+    data = await state.get_data()
+
+    global period_screenshot
+    period_screenshot = int(data["period"])
+
+    if period_screenshot > 0:
+        asyncio.create_task(do_screenshots(message.chat.id, period_screenshot, message.bot))
+    else:
+        await message.answer('The periodic screenshot function has been stopped.')
+        await state.clear()
+        await message.answer('Now you can play with you computer', reply_markup=kb.kb_security(message.from_user.id))
 
 
 @router.callback_query(F.data == 'shutdown')

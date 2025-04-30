@@ -16,6 +16,7 @@
 
 ### Security
 - Take a picture
+- Take a screenshot
 - Lock screen
 - Shutdown PC
 

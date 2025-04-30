@@ -45,12 +45,24 @@ def kb_security(user_telegram_id: int):
     security_list = []
 
     if str(user_telegram_id) in ADMINS:
-        security_list.append([InlineKeyboardButton(text='Take a picture', callback_data='picture')])
+        security_list.append([InlineKeyboardButton(text='Take a pic from the camera', callback_data='picture'),
+                              InlineKeyboardButton(text='Take a screenshot', callback_data='screenshot')])
         security_list.append([InlineKeyboardButton(text='Lock screen', callback_data='lock'),
                              InlineKeyboardButton(text='Shutdown PC', callback_data='shutdown')])
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=security_list)
     return keyboard
+
+def kb_screenshot(user_telegram_id: int):
+    screenshot_list = []
+
+    if str(user_telegram_id) in ADMINS:
+        screenshot_list.append([InlineKeyboardButton(text='One-time screenshot', callback_data='oneTimeScreen')])
+        screenshot_list.append([InlineKeyboardButton(text='Set screenshot period', callback_data='screenshot_period')])
+    
+    keyboard = InlineKeyboardMarkup(inline_keyboard=screenshot_list)
+    return keyboard
+
 
 def kb_shutdown(user_telegram_id: int):
     shutdown_list = []
