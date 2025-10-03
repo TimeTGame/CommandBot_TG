@@ -11,6 +11,8 @@ from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InputMediaPhoto, BotCommand, BotCommandScopeDefault
 
+import app.autostart_funcs as autostart
+from app.utils import get_icon
 import app.keyboards as kb
 import os
 import asyncio
@@ -121,7 +123,11 @@ async def chdir_two(message: Message, state: FSMContext):
 
 @router.callback_query(F.data == 'filesList')
 async def filesList(callback: CallbackQuery):
-    await callback.message.edit_text(f'List of files in a directory:\n{str(os.listdir(os.getcwd()))}')
+    files = os.listdir(os.getcwd())
+    files_with_icons = [f"{get_icon(file)} {file}" for file in files]
+    formatted_list = "\n".join(files_with_icons)
+
+    await callback.message.edit_text(f'List of files in a directory:\n{formatted_list}')
     await callback.message.answer('Now you can work with files', reply_markup=kb.kb_files(callback.from_user.id))
 
 
@@ -322,4 +328,15 @@ async def add_admin_func(message: Message, state: FSMContext):
     
     await message.answer(f'current list of admins:\n{ADMINS}', reply_markup=kb.kb_settings(message.from_user.id))
     
+    await state.clear()
+
+@router.callback_query(F.data == 'update_autostart')
+async def update_autostart(callback: CallbackQuery, state: FSMContext):
+    if autostart.check_autostart():
+        autostart.delete_autostart()
+        await callback.message.edit_text("🚮 Autostart was deleted")
+    else:
+        autostart.add_autostart()
+        await callback.message.edit_text("✅ Autostart now is working")
+
     await state.clear()

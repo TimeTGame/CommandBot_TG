@@ -3,6 +3,8 @@ from aiogram.types import (ReplyKeyboardMarkup, KeyboardButton,
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 from config import ADMINS
 
+from app.autostart_funcs import check_autostart
+
 
 def kb_main(user_telegram_id: int):
     main_list = []
@@ -81,6 +83,7 @@ def kb_settings(user_telegram_id: int):
 
     if str(user_telegram_id) in ADMINS:
         settings_list.append([InlineKeyboardButton(text='Update admins', callback_data='update_admins')])
-    
+        settings_list.append([InlineKeyboardButton(text='Deactivate autostart' if check_autostart() else 'Activate autostart', callback_data='update_autostart')])
+
     keyboard = InlineKeyboardMarkup(inline_keyboard=settings_list)
     return keyboard
