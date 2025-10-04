@@ -4,13 +4,14 @@ import pyautogui
 from config import *
 from time import sleep
 
-from aiogram import F, Router
+from aiogram import F, Router, Bot
 from aiogram.filters import CommandStart, Command
 from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
 from aiogram.types import InputMediaPhoto, BotCommand, BotCommandScopeDefault
 
+from app.mouse_tracker import mouse_tracker
 import app.autostart_funcs as autostart
 from app.utils import get_icon
 import app.keyboards as kb
@@ -340,3 +341,14 @@ async def update_autostart(callback: CallbackQuery, state: FSMContext):
         await callback.message.edit_text("✅ Autostart now is working")
 
     await state.clear()
+
+@router.callback_query(F.data == 'update_mouse_tracker')
+async def update_mouse_tracker(callback: CallbackQuery, bot: Bot):    
+    if not mouse_tracker.is_tracking:
+        chat_id = callback.message.chat.id
+        
+        mouse_tracker.start(chat_id=chat_id, bot=bot)
+        await callback.message.edit_text("✅ Start mouse tracking")
+    else:
+        mouse_tracker.stop()
+        await callback.message.edit_text(f"🔴 Shutdown mouse tracking")

@@ -1,6 +1,5 @@
 import os
 import platform
-import sys
 
 _system = platform.system()
 
@@ -13,8 +12,6 @@ def add_autostart():
         startup_folder = winshell.startup()
 
         shortcut_path = os.path.join(startup_folder, 'startTGBot.lnk')
-        print(app_path)
-        print(shortcut_path)
 
         winshell.CreateShortcut(
             Path=shortcut_path,

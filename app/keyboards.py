@@ -4,6 +4,7 @@ from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 from config import ADMINS
 
 from app.autostart_funcs import check_autostart
+from app.mouse_tracker import mouse_tracker
 
 
 def kb_main(user_telegram_id: int):
@@ -51,6 +52,7 @@ def kb_security(user_telegram_id: int):
                               InlineKeyboardButton(text='Take a screenshot', callback_data='screenshot')])
         security_list.append([InlineKeyboardButton(text='Lock screen', callback_data='lock'),
                              InlineKeyboardButton(text='Shutdown PC', callback_data='shutdown')])
+        security_list.append([InlineKeyboardButton(text='Start mouse tracker' if not mouse_tracker.is_tracking else 'Stop mouse tracker', callback_data='update_mouse_tracker')])
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=security_list)
     return keyboard

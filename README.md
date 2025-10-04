@@ -11,17 +11,19 @@
 ### Work with files
 - Change directory
 - List of files
--Create file/directory
--Delete file/directory
+- Create file/directory
+- Delete file/directory
 
 ### Security
 - Take a picture
 - Take a screenshot
 - Lock screen
 - Shutdown PC
+- Mouse tracker
 
 ### Settings
 - Update admins
+- Activate/Deactivate autostart
 
 ## Установка
 
