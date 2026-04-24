@@ -8,12 +8,15 @@
 
 ## Функции
 
+### Commands
+- Stop period screenshot
+
 ### Work with files
 
 - Change directory
 - List of files
--Create file/directory
--Delete file/directory
+- Create file/directory
+- Delete file/directory
 
 ### Security
 
