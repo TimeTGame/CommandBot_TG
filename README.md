@@ -9,18 +9,21 @@
 ## Функции
 
 ### Work with files
+
 - Change directory
 - List of files
 -Create file/directory
 -Delete file/directory
 
 ### Security
+
 - Take a picture
 - Take a screenshot
 - Lock screen
 - Shutdown PC
 
 ### Settings
+
 - Update admins
 
 ## Установка

@@ -45,7 +45,7 @@ def kb_files(user_telegram_id: int):
         files_list.append(
             [
                 InlineKeyboardButton(
-                    text='List of files',
+                    text='List of contents',
                     callback_data='filesList',
                 ),
             ],
