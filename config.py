@@ -1,2 +1,2 @@
-TOKEN = 'BotToken'
-ADMINS = ['YourTelegramID']
+TOKEN = '6164831073:AAHfdvim_7C8M4FF5v1dn1v5bzKQWhJMaR4'
+ADMINS = ['1780702333']

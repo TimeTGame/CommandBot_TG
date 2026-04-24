@@ -1,10 +1,11 @@
+__all__ = []
+
 import asyncio
 import logging
 
-from aiogram import Bot, Dispatcher, F
-
-from config import TOKEN
+from aiogram import Bot, Dispatcher
 from app.handlers import router
+from config import TOKEN
 
 
 bot = Bot(token=TOKEN)
@@ -16,9 +17,9 @@ async def main():
     await dp.start_polling(bot)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("Exit")
+        print('Exit')

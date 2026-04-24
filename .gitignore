@@ -1,5 +1,5 @@
 __pycache__
-.venv
+.dev-venv
 middlewares.py
 pic
 config.py
