@@ -1,325 +1,153 @@
-from send2trash import send2trash
-from cv2 import VideoCapture, imwrite
-import pyautogui
-from config import *
-from time import sleep
+__all__ = []
 
-from aiogram import F, Router
-from aiogram.filters import CommandStart, Command
-from aiogram.types import Message, CallbackQuery, FSInputFile
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.fsm.context import FSMContext
-from aiogram.types import InputMediaPhoto, BotCommand, BotCommandScopeDefault
-
-import app.keyboards as kb
 import os
-import asyncio
+from pathlib import Path
 
-print('- Your bot has been started.')
+from aiogram import Router, F
+from aiogram.filters import CommandStart
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import StatesGroup, State
+from aiogram.types import (
+    Message,
+    CallbackQuery,
+    BotCommand,
+    BotCommandScopeDefault,
+)
+import app.keyboards as kb
+from config import ADMINS
+from core.functions import get_directory_contents
+
 
 router = Router()
-main_path = os.getcwd()
 
 
-class files(StatesGroup):
-    chdir = State()
-    directory = State()
-    fileName = State()
-    fileContent = State()
-    delete = State()
-
-class sec(StatesGroup):
-    shutdown = State()
-    period = State()
-    answer_wait = State()
-
-class settings(StatesGroup):
-    admins = State()
+class Files(StatesGroup):
+    chdir_path = State()
+    create_path = State()
 
 
-async def do_screenshots(chat_id, period, bot):
-    global period_screenshot
-
-    while period_screenshot > 0:
-        myScreenshot = pyautogui.screenshot()
-
-        if not os.path.exists(f'{main_path}/pic'):
-            os.makedirs(f'{main_path}/pic')
-
-        screenshot_path = f'{main_path}/pic/Screenshot.jpg'
-        myScreenshot.save(screenshot_path)
-
-        myScreenshot_file = FSInputFile(screenshot_path)
-
-        await bot.send_photo(chat_id, myScreenshot_file)
-
-        await asyncio.sleep(period)
-
-
-
+# ---------- START COMMAND ----------
 @router.message(CommandStart())
 async def cmd_start(message: Message):
     if str(message.from_user.id) in ADMINS:
-        await message.bot.set_my_commands([BotCommand(command='start', description='Start'),
-                               BotCommand(command='stop_period_screenshot', description='Stop period screenshot')],
-                               BotCommandScopeDefault())
-                
-        await message.reply(f'Hello {message.from_user.full_name}, you can use the control panel.',
-                            reply_markup=kb.kb_main(message.from_user.id))
+        await message.bot.set_my_commands(
+            [
+                BotCommand(
+                    command='start',
+                    description='Start',
+                ),
+            ],
+            BotCommandScopeDefault(),
+        )
+        await message.reply(
+            (
+                f'Hello {message.from_user.full_name}, '
+                'you can use the control panel.'
+            ),
+            reply_markup=kb.kb_main(message.from_user.id),
+        )
     else:
         await message.answer('You are not on the list of administrators')
 
 
-@router.message(Command('stop_period_screenshot')) # Command to stop periodic screenshot
-async def stop_sacreenshots(message: Message, state: FSMContext):
-    if str(message.from_user.id) in ADMINS:
-        global period_screenshot
-        period_screenshot = 0
-
-        await message.answer('The periodic screenshot function has been stopped.')
-        await state.clear()
-        await message.answer('Now you can play with you computer', reply_markup=kb.kb_security(message.from_user.id))
-
-
-
+# ---------- GITHUB LINK ----------
 @router.message(F.text == '📖 Github')
 async def github(message: Message):
     if str(message.from_user.id) in ADMINS:
         await message.answer('Creator: https://github.com/TimeTGame')
 
 
-    
+# ---------- WORK WITH FILES ----------
 @router.message(F.text == '📂 Work with files')
-async def work_with_files(message: Message):
+async def work_with_files_mode(message: Message):
     if str(message.from_user.id) in ADMINS:
         await message.answer(f'Current working directory is:\n"{os.getcwd()}"')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
+        await message.answer(
+            'Now you can work with files',
+            reply_markup=kb.kb_files(message.from_user.id),
+        )
     else:
         await message.answer('You are not on the list of administrators')
 
 
+# < Change directory >
 @router.callback_query(F.data == 'chdir')
-async def chdir_one(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(files.chdir)
+async def chdir_parse_path(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(Files.chdir_path)
     await callback.message.edit_text('Write the path to the desired directory')
+    await callback.message.answer(
+        get_directory_contents(),
+    )
 
-@router.message(files.chdir)
-async def chdir_two(message: Message, state: FSMContext):
-    await state.update_data(chdir=message.text)
+
+@router.message(Files.chdir_path)
+async def chdir_change_path(message: Message, state: FSMContext):
+    await state.update_data(path=message.text)
     data = await state.get_data()
+    path_to_move = str(data['path'])
+    valid_path = Path(path_to_move).resolve()
 
-    if os.path.exists(data["chdir"]):
-        os.chdir(data["chdir"])
+    if Path(valid_path).exist():
+        os.chdir(valid_path)
         await message.answer(f'Path successfully changed on:\n"{os.getcwd()}"')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
     else:
         await message.answer('This path does not exist')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
-    
+
     await state.clear()
 
 
+# < Get files list >
 @router.callback_query(F.data == 'filesList')
-async def filesList(callback: CallbackQuery):
-    await callback.message.edit_text(f'List of files in a directory:\n{str(os.listdir(os.getcwd()))}')
-    await callback.message.answer('Now you can work with files', reply_markup=kb.kb_files(callback.from_user.id))
+async def files_list(callback: CallbackQuery):
+    await callback.message.edit_text(
+        f'List of files in a directory:\n{str(os.listdir(os.getcwd()))}',
+    )
+    await callback.message.answer(
+        'Now you can work with files',
+        reply_markup=kb.kb_files(callback.from_user.id),
+    )
 
 
+# < Create driectory/file >
 @router.callback_query(F.data == 'create')
-async def create_choice(callback: CallbackQuery):
-    await callback.message.edit_text('Create directory or text file', reply_markup=kb.kb_create(callback.from_user.id))
+async def create_parse_path(callback: CallbackQuery, state: FSMContext):
+    await state.set_state(Files.chdir_path)
+    await callback.message.edit_text(f'You\'r path:\n"{os.getcwd()}"')
+    await callback.message.answer(
+        'Specify the path to the directory/file to create',
+    )
 
-@router.callback_query(F.data == 'directory')
-async def create_question_dir(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(files.directory)
-    await callback.message.edit_text('Write the desired name for the new directory')
 
-@router.message(files.directory)
-async def create_directory(message: Message, state: FSMContext):
-    await state.update_data(directory = message.text)
+@router.message(Files.create_path)
+async def create_dir_or_file(message: Message, state: FSMContext):
+    await state.update_data(path=message.text)
     data = await state.get_data()
+    path_to_move = str(data['path'])
 
-    if not os.path.exists(data["directory"]):
-        os.makedirs(data["directory"])
-        await message.answer(f'Directory {data["directory"]} created')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
+    if Path(path_to_move).exist():
+        create_dir_or_file(path_to_move)
+        await message.answer(f'Successfully created:\n"{os.getcwd()}"')
     else:
-        await message.answer('A directory with this name already exists')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
-    
+        await message.answer('This path does not exist')
+
     await state.clear()
 
-
-@router.callback_query(F.data == 'textFile')
-async def create_question_fileName(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(files.fileName)
-    await callback.message.edit_text('Write the desired name for the new text file')
-
-@router.message(files.fileName)
-async def create_queston_fileContent(message: Message, state: FSMContext):
-    await state.update_data(fileName = message.text)
-    await state.set_state(files.fileContent)
-    await message.answer('Write the desired content for the new text file')
-
-@router.message(files.fileContent)
-async def create_textFile(message: Message, state: FSMContext):
-    await state.update_data(fileContent = message.text)
-    data = await state.get_data()
-
-    if not os.path.exists(data["fileName"]):
-        with open(str(data["fileName"]), "w") as file:
-            file.write(str(data['fileContent']))
-        await message.answer(f'Text file {data["fileName"]} created')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
-    else:
-        await message.answer('A text file with this name already exists')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
-    
-    await state.clear()
+    await message.answer(
+        'Now you can work with files',
+        reply_markup=kb.kb_files(message.from_user.id),
+    )
 
 
-@router.callback_query(F.data =='delete')
-async def delete_question(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(files.delete)
-    await callback.message.edit_text('Write the path to the directory or file you want to delete')
-
-@router.message(files.delete)
-async def delete_this(message: Message, state: FSMContext):
-    await state.update_data(delete = message.text)
-    data = await state.get_data()
-
-    if os.path.exists(str(data['delete'])):
-        send2trash(str(data["delete"]))
-        await message.answer(f'"{str(data["delete"])}"\nhas been deleted')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
-        print('LolYES')
-    else:
-        await message.answer(f'"{str(data["delete"])}"\ndoes not exist')
-        await message.answer('Now you can work with files', reply_markup=kb.kb_files(message.from_user.id))
-        print('LolNO')
-    
-    await state.clear()
-
-
-
+# ---------- SECURITY ----------
 @router.message(F.text == '🔐 Security')
-async def securityMessage(message: Message):
+async def security_mode(message: Message):
     if str(message.from_user.id) in ADMINS:
-        await message.answer('Now you can play with you computer', reply_markup=kb.kb_security(message.from_user.id))
+        await message.answer(
+            'Security command list',
+            reply_markup=kb.kb_security(message.from_user.id),
+        )
     else:
         await message.answer('You are not on the list of administrators')
 
 
-@router.callback_query(F.data == 'lock')
-async def lock_screen(callback: CallbackQuery):
-    await callback.message.edit_text('Your PC is now locked')
-    await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
-
-    os.system("rundll32.exe user32.dll, LockWorkStation")
-
-
-@router.callback_query(F.data == 'picture')
-async def picture(callback: CallbackQuery):
-    result, image = VideoCapture(0).read()
-    if result:
-        if not os.path.exists(f'{main_path}/pic'):
-            os.makedirs(f'{main_path}/pic')
-
-        imwrite(f'{main_path}/pic/CameraImage.jpg', image)
-        photo = FSInputFile(f'{main_path}/pic/CameraImage.jpg')
-
-        await callback.message.edit_media(InputMediaPhoto(media=photo, caption="Hi again"))
-        await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
-    else:
-        await callback.message.answer('At the moment it is not possible to take photos from the camera')
-        await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
-
-
-@router.callback_query(F.data == 'screenshot')
-async def screenshot_question(callback: CallbackQuery):
-    await callback.message.edit_text('What screenshot do you want to take?', reply_markup=kb.kb_screenshot(callback.from_user.id))
-
-@router.callback_query(F.data == 'oneTimeScreen')
-async def oneTimeScreen(callback: CallbackQuery):
-    myScreenshot = pyautogui.screenshot()
-
-    if not os.path.exists(f'{main_path}/pic'):
-        os.makedirs(f'{main_path}/pic')
-
-    myScreenshot.save(f'{main_path}/pic/Screenshot.jpg')
-    myScreenshot = FSInputFile(f'{main_path}/pic/Screenshot.jpg')
-
-    await callback.message.edit_media(InputMediaPhoto(media=myScreenshot, caption="Screenshot"))
-    await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
-
-@router.callback_query(F.data == 'screenshot_period')
-async def screenshot_period(callback: CallbackQuery, state: FSMContext):
-    await callback.message.edit_text('Write the period between screenshots (in seconds)')
-    await state.set_state(sec.period)
-
-@router.message(sec.period)
-async def screenshot_period_set(message: Message, state: FSMContext):
-    await state.update_data(period = message.text)
-    data = await state.get_data()
-
-    global period_screenshot
-    period_screenshot = int(data["period"])
-
-    if period_screenshot > 0:
-        asyncio.create_task(do_screenshots(message.chat.id, period_screenshot, message.bot))
-    else:
-        await message.answer('The periodic screenshot function has been stopped.')
-        await state.clear()
-        await message.answer('Now you can play with you computer', reply_markup=kb.kb_security(message.from_user.id))
-
-
-@router.callback_query(F.data == 'shutdown')
-async def shutdown_question(callback: CallbackQuery):
-    await callback.message.edit_text('Are you sure you want to turn it off?', reply_markup=kb.kb_shutdown(callback.from_user.id))
-
-@router.callback_query(F.data == 'shutdown_No')
-async def securityCallback(callback: CallbackQuery):
-    await callback.message.edit_text('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
-
-@router.callback_query(F.data == 'shutdown_Yes')
-async def shutdown(callback: CallbackQuery):
-    await callback.message.answer('Your PC will be turned off')
-    await callback.message.answer('Now you can play with you computer', reply_markup=kb.kb_security(callback.from_user.id))
-
-    os.system("shutdown /s /t 1")
-
-
-
-@router.message(F.text == '⚙ Settings')
-async def github(message: Message):
-    if str(message.from_user.id) in ADMINS:
-        await message.answer('Settings', reply_markup=kb.kb_settings(message.from_user.id))
-    else:
-        await message.answer('You are not on the list of administrators')
-
-
-@router.callback_query(F.data == 'update_admins')
-async def update_admins(callback: CallbackQuery, state: FSMContext):
-    await state.set_state(settings.admins)
-
-    await callback.message.edit_text(f'current list of admins:\n{ADMINS}')
-    await callback.message.answer('Enter the user ID of the user you want to make an admin or remove from the admin list.')
-
-@router.message(settings.admins)
-async def add_admin_func(message: Message, state: FSMContext):
-    await state.update_data(admins = message.text)
-    data = await state.get_data()
-
-    if str(data["admins"]) in ADMINS:
-        ADMINS.remove(str(data["admins"]))
-        await message.answer(f'{data["admins"]} has been deleted form admin list.')
-    else:
-        ADMINS.append(str(data["admins"]))
-        await message.answer(f'{data["admins"]} has been added in admin list.')
-    
-    with open(f'{main_path}/config.py', 'w') as file:
-        file.writelines([f'TOKEN = \'{TOKEN}\'\n', f'ADMINS = {ADMINS}'])
-    
-    await message.answer(f'current list of admins:\n{ADMINS}', reply_markup=kb.kb_settings(message.from_user.id))
-    
-    await state.clear()
+print('- Your bot has been started.')

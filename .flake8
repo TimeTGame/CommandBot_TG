@@ -1,0 +1,4 @@
+[flake8]
+import-order-style = pep8
+exclude = .git,__pycache__,.dev-venv
+max-line-length = 79
