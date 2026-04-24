@@ -9,6 +9,7 @@
 ## Функции
 
 ### Commands
+
 - Stop period screenshot
 
 ### Work with files
@@ -33,6 +34,13 @@
 
 Для установки и запуска бота выполните следующие шаги:
 
+### Скопируйте файлы проекта
+
+```bash
+git clone https://github.com/TimeTGame/CommandBot_TG.git
+cd CommandBot_TG
+```
+
 ### Создание виртуального окружения (рекомендуется)
 
 ```bash
@@ -50,7 +58,13 @@ pip install -r requirements.txt
 
 ### Настройка
 
-Перед запуском бота откройте файл `config.py` и заполните следующие поля:
+Перед запуском бота копируйте файл `config-example.py` с именем `config.py`:
+
+```bash
+cp config-example.py config.py
+```
+
+И заполните следующие поля:
 
 - `BotToken`: Вставьте токен вашего бота, который вы получили от BotFather в Telegram.
 - `YourTelegramID`: Вставьте ваш Telegram ID.
